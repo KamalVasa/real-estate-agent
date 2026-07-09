@@ -48,21 +48,36 @@ def health():
 import shutil
 import uuid
 import os
+from supabase import create_client, Client
 
 @app.post("/upload-image", dependencies=[Depends(require_admin)])
 async def upload_image(file: UploadFile = File(...)):
-    if not os.path.exists(UPLOAD_DIR):
-        os.makedirs(UPLOAD_DIR)
-    
     file_ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
     unique_filename = f"{uuid.uuid4()}.{file_ext}"
-    file_path = os.path.join(UPLOAD_DIR, unique_filename)
-    
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+
+    if settings.supabase_url and settings.supabase_key:
+        try:
+            supabase: Client = create_client(settings.supabase_url, settings.supabase_key)
+            file_data = await file.read()
+            supabase.storage.from_("properties").upload(
+                path=unique_filename,
+                file=file_data,
+                file_options={"content-type": file.content_type}
+            )
+            public_url = supabase.storage.from_("properties").get_public_url(unique_filename)
+            return {"url": public_url}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Supabase upload failed: {str(e)}")
+    else:
+        if not os.path.exists(UPLOAD_DIR):
+            os.makedirs(UPLOAD_DIR)
         
-    # Return the URL relative to the backend server
-    return {"url": f"{settings.frontend_url.replace('3000', '8000')}/uploads/{unique_filename}"}
+        file_path = os.path.join(UPLOAD_DIR, unique_filename)
+        
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        return {"url": f"{settings.frontend_url.replace('3000', '8000')}/uploads/{unique_filename}"}
 
 
 @app.post("/properties", response_model=PropertyOut, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_admin)])

@@ -6,16 +6,14 @@ services:
     startCommand: "cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: DATABASE_URL
-        value: sqlite:////data/realestate.db
-      - key: UPLOAD_DIR
-        value: /data/uploads
+        value: postgresql://postgres.xxxx:yourpassword@aws-0-eu-central-1.pooler.supabase.com:6543/postgres # Update with Supabase DB URL
+      - key: SUPABASE_URL
+        value: https://xxxx.supabase.co # Update with Supabase URL
+      - key: SUPABASE_KEY
+        value: your-supabase-anon-key # Update with Supabase API Key
       - key: FRONTEND_URL
         value: https://your-frontend-url.vercel.app # Update this after deploying Vercel
       - key: ADMIN_TOKEN
         generateValue: true
       - key: GEMINI_API_KEY
         sync: false
-    disk:
-      name: data
-      mountPath: /data
-      sizeGB: 1

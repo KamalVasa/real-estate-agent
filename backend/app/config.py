@@ -6,6 +6,8 @@ class Settings(BaseSettings):
     gemini_api_key: str | None = None
     frontend_url: str = "http://localhost:3000"
     admin_token: str | None = None
+    supabase_url: str | None = None
+    supabase_key: str | None = None
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
