@@ -126,8 +126,8 @@ export function AdminDashboard() {
       headers: {
         ...authHeaders,
         ...(options.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
-        ...options.headers,
-      },
+        ...(options.headers as Record<string, string> || {}),
+      } as Record<string, string>,
     });
     if (!response.ok) {
       const detail = await response.json().catch(() => ({}));
