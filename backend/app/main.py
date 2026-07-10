@@ -27,6 +27,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+import os
+
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
 if not os.path.exists(UPLOAD_DIR):
     os.makedirs(UPLOAD_DIR)
@@ -47,7 +49,6 @@ def health():
 
 import shutil
 import uuid
-import os
 from supabase import create_client, Client
 
 @app.post("/upload-image", dependencies=[Depends(require_admin)])
