@@ -298,22 +298,22 @@ export function AdminDashboard() {
              </div>
           </section>
 
-          <div style={{ display: 'flex', gap: '10px', background: 'white', padding: '16px', borderRadius: '0 0 16px 16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '30px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', background: 'white', padding: '16px', borderRadius: '0 0 16px 16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '30px' }}>
             <button 
               onClick={() => setActiveTab('add_property')}
-              style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', background: activeTab === 'add_property' ? '#164f3c' : '#edf3ee', color: activeTab === 'add_property' ? 'white' : '#17221c' }}
+              style={{ flex: '1 1 auto', minWidth: '140px', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', background: activeTab === 'add_property' ? '#164f3c' : '#edf3ee', color: activeTab === 'add_property' ? 'white' : '#17221c' }}
             >
               Add Property
             </button>
             <button 
               onClick={() => setActiveTab('inventory')}
-              style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', background: activeTab === 'inventory' ? '#164f3c' : '#edf3ee', color: activeTab === 'inventory' ? 'white' : '#17221c' }}
+              style={{ flex: '1 1 auto', minWidth: '140px', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', background: activeTab === 'inventory' ? '#164f3c' : '#edf3ee', color: activeTab === 'inventory' ? 'white' : '#17221c' }}
             >
               Manage Inventory
             </button>
             <button 
               onClick={() => setActiveTab('leads')}
-              style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', background: activeTab === 'leads' ? '#164f3c' : '#edf3ee', color: activeTab === 'leads' ? 'white' : '#17221c' }}
+              style={{ flex: '1 1 auto', minWidth: '140px', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', background: activeTab === 'leads' ? '#164f3c' : '#edf3ee', color: activeTab === 'leads' ? 'white' : '#17221c' }}
             >
               Buyer Enquiries
             </button>
