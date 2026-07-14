@@ -26,6 +26,7 @@ class Property(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="Available", index=True)
     views: Mapped[int] = mapped_column(Integer, default=0)
+    negotiable: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class Lead(Base):

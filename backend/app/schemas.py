@@ -20,6 +20,7 @@ class PropertyBase(BaseModel):
     description: str | None = None
     status: str = "Available"
     views: int = 0
+    negotiable: bool = False
 
 
 class PropertyCreate(PropertyBase):
@@ -42,6 +43,7 @@ class PropertyUpdate(BaseModel):
     featured: bool | None = None
     description: str | None = None
     status: str | None = None
+    negotiable: bool | None = None
 
 
 class PropertyOut(PropertyBase):

@@ -49,7 +49,10 @@ export default async function PropertyPage({ params }: Props) {
       <div className="eyebrow">{property.area}</div>
       <h1 className="display">{property.society_name}</h1>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
-        <div className="price">{formatPrice(property.price, property.listing_type)}</div>
+        <div className="price">
+          {formatPrice(property.price, property.listing_type)}
+          {property.negotiable && <span style={{ fontSize: '1rem', color: '#66726b', marginLeft: '8px', fontWeight: 'normal' }}>(Negotiable)</span>}
+        </div>
         <div style={{ color: '#64748b', fontWeight: 600, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
           👁️ {property.views} Views
         </div>

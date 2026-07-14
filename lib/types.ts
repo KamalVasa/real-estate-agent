@@ -16,6 +16,7 @@ export type Property = {
   description?: string;
   status?: string;
   views?: number;
+  negotiable?: boolean;
 };
 
 export type PropertyForm = Omit<Property, "id"> & { id?: number; status?: string; views?: number; };

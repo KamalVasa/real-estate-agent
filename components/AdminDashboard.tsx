@@ -40,6 +40,8 @@ type PropertyForm = {
   featured: boolean;
   description: string;
   status: string;
+  price_unit: string;
+  negotiable: boolean;
 };
 
 const emptyForm: PropertyForm = {
@@ -58,6 +60,8 @@ const emptyForm: PropertyForm = {
   featured: false,
   description: "",
   status: "Available",
+  price_unit: "Lakh",
+  negotiable: false,
 };
 
 function splitLines(value: string) {
@@ -65,13 +69,22 @@ function splitLines(value: string) {
 }
 
 function propertyToForm(property: Property): PropertyForm {
+  let displayPrice = property.price;
+  let priceUnit = "Lakh";
+  if (property.price >= 10000000) {
+    displayPrice = property.price / 10000000;
+    priceUnit = "Cr";
+  } else if (property.price >= 100000) {
+    displayPrice = property.price / 100000;
+  }
+  
   return {
     listing_type: property.listing_type || "Sale",
     property_type: property.property_type || "Flat",
     society_name: property.society_name,
     area: property.area,
     bhk: String(property.bhk || 0),
-    price: String(property.price),
+    price: String(displayPrice),
     carpet_area: String(property.carpet_area),
     floor: property.floor,
     furnished: property.furnished,
@@ -81,6 +94,8 @@ function propertyToForm(property: Property): PropertyForm {
     featured: Boolean(property.featured),
     description: property.description || "",
     status: property.status || "Available",
+    price_unit: priceUnit,
+    negotiable: Boolean(property.negotiable),
   };
 }
 
@@ -181,7 +196,7 @@ export function AdminDashboard() {
       society_name: form.society_name.trim(),
       area: form.area.trim(),
       bhk: Number(form.bhk || 0),
-      price: Number(form.price),
+      price: Number(form.price) * (form.price_unit === 'Cr' ? 10000000 : 100000),
       carpet_area: Number(form.carpet_area),
       floor: form.floor.trim(),
       furnished: form.furnished.trim(),
@@ -190,6 +205,8 @@ export function AdminDashboard() {
       image_urls: splitLines(form.image_urls),
       featured: form.featured,
       description: form.description.trim() || null,
+      status: form.status,
+      negotiable: form.negotiable,
     };
   }
 
@@ -364,7 +381,16 @@ export function AdminDashboard() {
             {form.property_type === "Flat" && (
               <div className="field"><label>BHK</label><input value={form.bhk} onChange={(event) => updateField("bhk", event.target.value)} type="number" min="0" /></div>
             )}
-            <div className="field"><label>Price</label><input required value={form.price} onChange={(event) => updateField("price", event.target.value)} type="number" min="1" /></div>
+            <div className="field">
+              <label>Price</label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input required value={form.price} onChange={(event) => updateField("price", event.target.value)} type="number" min="0.01" step="0.01" style={{ flex: 1 }} placeholder="e.g. 50" />
+                <select value={form.price_unit || "Lakh"} onChange={(event) => updateField("price_unit", event.target.value)} style={{ width: '90px', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '10px 14px' }}>
+                  <option value="Lakh">Lakh</option>
+                  <option value="Cr">Cr</option>
+                </select>
+              </div>
+            </div>
           </div>
           
           <div className="form-row">
@@ -382,7 +408,16 @@ export function AdminDashboard() {
           <div className="field admin-wide"><label>Description</label><textarea value={form.description} onChange={(event) => updateField("description", event.target.value)} rows={4} /></div>
           <div className="field admin-wide"><label>Image URLs</label><textarea value={form.image_urls} onChange={(event) => updateField("image_urls", event.target.value)} placeholder="Paste one image URL per line" rows={4} /></div>
           <div className="field"><label>Upload image</label><input type="file" accept="image/*" onChange={uploadImage} /></div>
-          <label className="check-row"><input type="checkbox" checked={form.featured} onChange={(event) => updateField("featured", event.target.checked)} /> Featured listing</label>
+          <div style={{ display: 'flex', gap: '20px' }}>
+            <label className="check-row" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+              <input type="checkbox" checked={form.featured} onChange={(event) => updateField("featured", event.target.checked)} /> 
+              <b>Featured listing</b>
+            </label>
+            <label className="check-row" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+              <input type="checkbox" checked={form.negotiable} onChange={(event) => updateField("negotiable", event.target.checked)} /> 
+              <b>Price is Negotiable</b>
+            </label>
+          </div>
           <div className="admin-actions admin-wide">
             <button className="btn btn-primary" disabled={busy}>{busy ? "Saving..." : editingId ? "Update listing" : "Add listing"}</button>
             {editingId && <button className="btn btn-outline" type="button" onClick={() => { setEditingId(null); setForm(emptyForm); }}>Cancel edit</button>}

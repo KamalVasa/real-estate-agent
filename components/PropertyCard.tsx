@@ -24,7 +24,10 @@ export function PropertyCard({ property }: { property: Property }) {
       <div className="card-body">
         <h3>{property.society_name}</h3>
         <div className="card-meta"><span>{property.area}</span><span>{type} · {configuration}</span></div>
-        <div className="card-price">{formatPrice(property.price, property.listing_type)}</div>
+        <div className="card-price">
+          {formatPrice(property.price, property.listing_type)}
+          {property.negotiable && <span style={{ fontSize: '0.8rem', color: '#66726b', marginLeft: '6px', fontWeight: 'normal' }}>(Negotiable)</span>}
+        </div>
       </div>
     </Link>
   );
