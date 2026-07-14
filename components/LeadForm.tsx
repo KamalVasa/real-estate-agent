@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import { whatsappUrl } from "@/lib/config";
 
-export function LeadForm({ propertyName, areas = [] }: { propertyName?: string, areas?: string[] }) {
+export function LeadForm({ propertyName, areas = [], fixedIntent }: { propertyName?: string, areas?: string[], fixedIntent?: string }) {
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -21,6 +21,14 @@ export function LeadForm({ propertyName, areas = [] }: { propertyName?: string, 
         const response = await fetch(`${api}/leads`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
         if (!response.ok) throw new Error("Could not save enquiry");
       }
+      const intentMsg = fixedIntent ? fixedIntent.toLowerCase() : raw.intent?.toString().toLowerCase() || "buy";
+      const areaMsg = propertyName ? propertyName : (raw.preferred_area ? `in ${raw.preferred_area}` : "in Dombivli or Thakurli");
+      const budgetMsg = raw.budget ? ` My budget is around ₹${raw.budget}.` : "";
+      const text = `Hi HK Properties! I am looking to ${intentMsg} a property ${areaMsg}.${budgetMsg} My name is ${raw.name}. Please call me back.`;
+      
+      const url = whatsappUrl(text);
+      window.open(url, "_blank");
+
       setSent(true);
       event.currentTarget.reset();
     } catch {
@@ -28,13 +36,34 @@ export function LeadForm({ propertyName, areas = [] }: { propertyName?: string, 
     } finally { setBusy(false); }
   }
 
-  if (sent) return <div className="notice"><b>Enquiry received.</b> We’ll call you shortly. For a faster reply, message us on WhatsApp.</div>;
+  if (sent) return (
+    <div className="stack">
+      <div className="notice"><b>Enquiry received.</b> We’ll call you shortly. For a faster reply, message us on WhatsApp.</div>
+      <a className="btn btn-accent" href={whatsappUrl(`Hi, I’m interested in ${propertyName || "a property in Dombivli or Thakurli"}.`)} target="_blank" rel="noreferrer">Chat on WhatsApp</a>
+    </div>
+  );
   return (
     <form className="stack" onSubmit={submit}>
       <input type="hidden" name="source" value={propertyName ? `Property: ${propertyName}` : "Contact page"} />
-      <div className="field"><label htmlFor="name">Your name</label><input id="name" name="name" required placeholder="Full name" /></div>
-      <div className="field"><label htmlFor="phone">Phone number</label><input id="phone" name="phone" required inputMode="tel" pattern="[0-9+ -]{10,15}" placeholder="10-digit mobile number" /></div>
-      <div className="field"><label htmlFor="budget">Budget</label><input id="budget" name="budget" type="number" min="0" placeholder="e.g. 8000000" /></div>
+      <div className="form-row">
+        <div className="field"><label htmlFor="name">Your name</label><input id="name" name="name" required placeholder="Full name" /></div>
+        <div className="field"><label htmlFor="phone">Phone number</label><input id="phone" name="phone" required inputMode="tel" pattern="[0-9+ -]{10,15}" placeholder="10-digit mobile number" /></div>
+      </div>
+      <div className="form-row">
+        {fixedIntent ? (
+          <input type="hidden" name="intent" value={fixedIntent} />
+        ) : (
+          <div className="field">
+            <label htmlFor="intent">I want to</label>
+            <select id="intent" name="intent">
+              <option value="Buy">Buy a property</option>
+              <option value="Rent">Rent a property</option>
+              <option value="Sell">Sell my property</option>
+            </select>
+          </div>
+        )}
+        <div className="field"><label htmlFor="budget">Budget</label><input id="budget" name="budget" type="number" min="0" placeholder="e.g. 8000000" /></div>
+      </div>
       {!propertyName && (
         <div className="field">
           <label htmlFor="preferred_area">Preferred area</label>

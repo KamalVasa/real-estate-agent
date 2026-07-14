@@ -1,5 +1,6 @@
 export type Property = {
   id: number;
+  listing_type?: string;
   property_type?: string;
   society_name: string;
   area: string;
@@ -13,4 +14,8 @@ export type Property = {
   image_urls: string[];
   featured?: boolean;
   description?: string;
+  status?: string;
+  views?: number;
 };
+
+export type PropertyForm = Omit<Property, "id"> & { id?: number; status?: string; views?: number; };

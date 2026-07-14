@@ -10,6 +10,7 @@ class Property(Base):
     __tablename__ = "properties"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    listing_type: Mapped[str] = mapped_column(String(20), default="Sale", index=True)
     property_type: Mapped[str] = mapped_column(String(40), default="Flat", index=True)
     society_name: Mapped[str] = mapped_column(String(160), index=True)
     area: Mapped[str] = mapped_column(String(80), index=True)
@@ -23,12 +24,15 @@ class Property(Base):
     image_urls: Mapped[list[str]] = mapped_column(JSON, default=list)
     featured: Mapped[bool] = mapped_column(Boolean, default=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default="Available", index=True)
+    views: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class Lead(Base):
     __tablename__ = "leads"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    intent: Mapped[str] = mapped_column(String(20), default="Buy", index=True)
     name: Mapped[str] = mapped_column(String(100))
     phone: Mapped[str] = mapped_column(String(20), index=True)
     budget: Mapped[float | None] = mapped_column(Float, nullable=True)

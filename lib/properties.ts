@@ -68,7 +68,10 @@ export async function getProperty(id: number): Promise<Property | undefined> {
   return properties.find((property) => property.id === id);
 }
 
-export const formatPrice = (price: number) => {
+export const formatPrice = (price: number, listingType?: string) => {
+  if (listingType === "Rent") {
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(price) + " / mo";
+  }
   if (price >= 10000000) return `₹${(price / 10000000).toFixed(2).replace(/\.00$/, "")} Cr`;
   return `₹${(price / 100000).toFixed(1).replace(/\.0$/, "")} L`;
 };

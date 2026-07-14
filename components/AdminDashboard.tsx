@@ -6,6 +6,7 @@ import { formatPrice } from "@/lib/properties";
 
 type Lead = {
   id: number;
+  intent: string;
   name: string;
   phone: string;
   budget?: number | null;
@@ -24,6 +25,7 @@ type MarketingContent = {
 };
 
 type PropertyForm = {
+  listing_type: string;
   property_type: string;
   society_name: string;
   area: string;
@@ -40,6 +42,7 @@ type PropertyForm = {
 };
 
 const emptyForm: PropertyForm = {
+  listing_type: "Sale",
   property_type: "Flat",
   society_name: "",
   area: "",
@@ -61,6 +64,7 @@ function splitLines(value: string) {
 
 function propertyToForm(property: Property): PropertyForm {
   return {
+    listing_type: property.listing_type || "Sale",
     property_type: property.property_type || "Flat",
     society_name: property.society_name,
     area: property.area,
@@ -91,6 +95,7 @@ export function AdminDashboard() {
   const [marketing, setMarketing] = useState<MarketingContent | null>(null);
   const [activeTab, setActiveTab] = useState<'add_property' | 'inventory' | 'leads'>('add_property');
   const [selectedAreaByType, setSelectedAreaByType] = useState<Record<string, string>>({});
+  const [inventoryListingType, setInventoryListingType] = useState<"Sale" | "Rent">("Sale");
 
   function selectArea(type: string, area: string) {
     setSelectedAreaByType((prev) => ({ ...prev, [type]: area }));
@@ -100,15 +105,17 @@ export function AdminDashboard() {
 
   const groupedProperties = useMemo(() => {
     const groups: Record<string, Record<string, Property[]>> = {};
-    properties.forEach((property) => {
-      const type = property.property_type || "Flat";
-      const area = property.area || "Unknown Area";
-      if (!groups[type]) groups[type] = {};
-      if (!groups[type][area]) groups[type][area] = [];
-      groups[type][area].push(property);
-    });
+    properties
+      .filter((p) => (p.listing_type || "Sale") === inventoryListingType)
+      .forEach((property) => {
+        const type = property.property_type || "Flat";
+        const area = property.area || "Unknown Area";
+        if (!groups[type]) groups[type] = {};
+        if (!groups[type][area]) groups[type][area] = [];
+        groups[type][area].push(property);
+      });
     return groups;
-  }, [properties]);
+  }, [properties, inventoryListingType]);
 
   useEffect(() => {
     const savedToken = window.localStorage.getItem("dpa_admin_token") || "";
@@ -122,6 +129,7 @@ export function AdminDashboard() {
 
   async function request(path: string, options: RequestInit = {}) {
     const response = await fetch(`${api}${path}`, {
+      cache: 'no-store',
       ...options,
       headers: {
         ...authHeaders,
@@ -140,9 +148,10 @@ export function AdminDashboard() {
   async function refresh() {
     setError("");
     try {
+      const ts = Date.now();
       const [propertyData, leadData] = await Promise.all([
-        request("/properties"),
-        request("/leads"),
+        request(`/properties?t=${ts}`),
+        request(`/leads?t=${ts}`),
       ]);
       setProperties(propertyData);
       setLeads(leadData);
@@ -164,6 +173,7 @@ export function AdminDashboard() {
 
   function payloadFromForm() {
     return {
+      listing_type: form.listing_type || "Sale",
       property_type: form.property_type.trim() || "Flat",
       society_name: form.society_name.trim(),
       area: form.area.trim(),
@@ -279,7 +289,10 @@ export function AdminDashboard() {
                <div className="eyebrow">Private admin</div>
                <p style={{ margin: 0, fontWeight: "bold" }}>Logged in successfully</p>
              </div>
-             <button className="btn btn-outline danger" onClick={() => { setToken(""); setTokenInput(""); window.localStorage.removeItem("dpa_admin_token"); }}>Log Out</button>
+             <div style={{ display: 'flex', gap: '12px' }}>
+               <a href="/" className="btn btn-outline">Go to Website</a>
+               <button className="btn btn-outline danger" onClick={() => { setToken(""); setTokenInput(""); window.localStorage.removeItem("dpa_admin_token"); }}>Log Out</button>
+             </div>
           </section>
 
           <div style={{ display: 'flex', gap: '10px', background: 'white', padding: '16px', borderRadius: '0 0 16px 16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '30px' }}>
@@ -312,25 +325,56 @@ export function AdminDashboard() {
         <div className="eyebrow">{editingId ? "Edit listing" : "Add listing"}</div>
         <h2>{editingId ? "Update property or shop" : "New property or shop"}</h2>
         <form className="admin-form" onSubmit={saveProperty}>
-          <div className="field">
-            <label>Property type</label>
-            <select value={form.property_type} onChange={(event) => updateField("property_type", event.target.value)}>
-              <option value="Flat">Flat</option>
-              <option value="Shop">Shop</option>
-              <option value="Office">Office</option>
-            </select>
+          <div className="form-row">
+            <div className="field">
+              <label>Listing type</label>
+              <select value={form.listing_type} onChange={(event) => updateField("listing_type", event.target.value)}>
+                <option value="Sale">For Sale</option>
+                <option value="Rent">For Rent</option>
+              </select>
+            </div>
+            <div className="field">
+              <label>Status</label>
+              <select value={form.status || "Available"} onChange={(event) => updateField("status", event.target.value)}>
+                <option value="Available">Available</option>
+                <option value="Sold">Sold</option>
+                <option value="Rented">Rented</option>
+              </select>
+            </div>
           </div>
-          <div className="field"><label>{form.property_type === "Flat" ? "Society / building name" : "Complex / Market name"}</label><input required value={form.society_name} onChange={(event) => updateField("society_name", event.target.value)} /></div>
-          <div className="field"><label>Area</label><input required value={form.area} onChange={(event) => updateField("area", event.target.value)} placeholder="Dombivli East, Kalyan, Diva..." /></div>
+          <div className="form-row">
+            <div className="field">
+              <label>Property type</label>
+              <select value={form.property_type} onChange={(event) => updateField("property_type", event.target.value)}>
+                <option value="Flat">Flat</option>
+                <option value="Shop">Shop</option>
+                <option value="Office">Office</option>
+              </select>
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="field"><label>{form.property_type === "Flat" ? "Society / building name" : "Complex / Market name"}</label><input required value={form.society_name} onChange={(event) => updateField("society_name", event.target.value)} /></div>
+            <div className="field"><label>Area</label><input required value={form.area} onChange={(event) => updateField("area", event.target.value)} placeholder="Dombivli East, Kalyan, Diva..." /></div>
+          </div>
           
-          {form.property_type === "Flat" && (
-            <div className="field"><label>BHK</label><input value={form.bhk} onChange={(event) => updateField("bhk", event.target.value)} type="number" min="0" /></div>
+          <div className="form-row">
+            {form.property_type === "Flat" && (
+              <div className="field"><label>BHK</label><input value={form.bhk} onChange={(event) => updateField("bhk", event.target.value)} type="number" min="0" /></div>
+            )}
+            <div className="field"><label>Price</label><input required value={form.price} onChange={(event) => updateField("price", event.target.value)} type="number" min="1" /></div>
+          </div>
+          
+          <div className="form-row">
+            <div className="field"><label>Carpet area</label><input required value={form.carpet_area} onChange={(event) => updateField("carpet_area", event.target.value)} type="number" min="1" /></div>
+            <div className="field"><label>Station distance</label><input required value={form.station_distance} onChange={(event) => updateField("station_distance", event.target.value)} /></div>
+          </div>
+
+          {form.property_type !== "Shop" && (
+            <div className="form-row">
+              <div className="field"><label>Floor</label><input required value={form.floor} onChange={(event) => updateField("floor", event.target.value)} /></div>
+              <div className="field"><label>Furnished</label><input required value={form.furnished} onChange={(event) => updateField("furnished", event.target.value)} /></div>
+            </div>
           )}
-          <div className="field"><label>Price</label><input required value={form.price} onChange={(event) => updateField("price", event.target.value)} type="number" min="1" /></div>
-          <div className="field"><label>Carpet area</label><input required value={form.carpet_area} onChange={(event) => updateField("carpet_area", event.target.value)} type="number" min="1" /></div>
-          <div className="field"><label>Floor</label><input required value={form.floor} onChange={(event) => updateField("floor", event.target.value)} /></div>
-          <div className="field"><label>Furnished</label><input required value={form.furnished} onChange={(event) => updateField("furnished", event.target.value)} /></div>
-          <div className="field"><label>Station distance</label><input required value={form.station_distance} onChange={(event) => updateField("station_distance", event.target.value)} /></div>
           <div className="field admin-wide"><label>{form.property_type === "Flat" ? "Amenities" : "Features (e.g. Washroom, Frontage)"}</label><textarea value={form.amenities} onChange={(event) => updateField("amenities", event.target.value)} placeholder={form.property_type === "Flat" ? "Parking\nSecurity\nLift" : "Attached Washroom\nRoad Facing\nPower Backup"} rows={4} /></div>
           <div className="field admin-wide"><label>Description</label><textarea value={form.description} onChange={(event) => updateField("description", event.target.value)} rows={4} /></div>
           <div className="field admin-wide"><label>Image URLs</label><textarea value={form.image_urls} onChange={(event) => updateField("image_urls", event.target.value)} placeholder="Paste one image URL per line" rows={4} /></div>
@@ -350,7 +394,13 @@ export function AdminDashboard() {
       <section className="admin-panel admin-wide">
         <div className="section-head compact-head">
           <div><div className="eyebrow">Inventory</div><h2>Listings</h2></div>
-          <button className="btn btn-outline" onClick={refresh}>Refresh</button>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <div style={{ display: 'flex', background: '#f1f5f9', padding: '4px', borderRadius: '12px' }}>
+              <button onClick={() => setInventoryListingType("Sale")} style={{ padding: '8px 24px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '0.95rem', background: inventoryListingType === "Sale" ? 'white' : 'transparent', color: inventoryListingType === "Sale" ? '#0f172a' : '#64748b', boxShadow: inventoryListingType === "Sale" ? '0 2px 8px rgba(0,0,0,0.08)' : 'none', transition: 'all 0.2s ease' }}>For Sale</button>
+              <button onClick={() => setInventoryListingType("Rent")} style={{ padding: '8px 24px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '0.95rem', background: inventoryListingType === "Rent" ? 'white' : 'transparent', color: inventoryListingType === "Rent" ? '#0f172a' : '#64748b', boxShadow: inventoryListingType === "Rent" ? '0 2px 8px rgba(0,0,0,0.08)' : 'none', transition: 'all 0.2s ease' }}>For Rent</button>
+            </div>
+            <button className="btn btn-outline" onClick={refresh}>Refresh</button>
+          </div>
         </div>
         <div className="admin-list" style={{ gap: '2rem' }}>
           {Object.entries(groupedProperties).map(([type, areas]) => {
@@ -397,7 +447,7 @@ export function AdminDashboard() {
                         >
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                             <span style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1e293b' }}>{property.society_name}</span>
-                            <span style={{ fontSize: '1.1rem', color: '#10b981', fontWeight: '700' }}>{formatPrice(property.price)}</span>
+                            <span style={{ fontSize: '1.1rem', color: '#10b981', fontWeight: '700' }}>{formatPrice(property.price, property.listing_type)}</span>
                             <span style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: '500' }}>
                               {property.property_type === 'Flat' && property.bhk ? `${property.bhk} BHK • ` : ''}{property.carpet_area} sq.ft.
                             </span>
@@ -438,7 +488,7 @@ export function AdminDashboard() {
               </div>
             );
           })}
-          {!properties.length && <p className="muted">No properties found. Add some flats or shops first.</p>}
+          {Object.keys(groupedProperties).length === 0 && <p className="muted">No {inventoryListingType === "Sale" ? "sale" : "rental"} properties found. Add some from the "Add listing" tab.</p>}
         </div>
       </section>
 
@@ -461,77 +511,96 @@ export function AdminDashboard() {
           <div><div className="eyebrow">Buyer Enquiries</div><h2 style={{ margin: 0 }}>Lead Management</h2></div>
           <button className="btn btn-outline" onClick={refresh}>Refresh Leads</button>
         </div>
-        
-        <div className="stack" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {leads.map((lead) => {
-            let statusColor = '#64748b';
-            let statusBg = '#f1f5f9';
-            if (lead.status === 'new') { statusColor = '#2563eb'; statusBg = '#eff6ff'; }
-            if (lead.status === 'contacted') { statusColor = '#d97706'; statusBg = '#fef3c7'; }
-            if (lead.status === 'visit_planned') { statusColor = '#10b981'; statusBg = '#ecfdf5'; }
-            if (lead.status === 'closed') { statusColor = '#059669'; statusBg = '#d1fae5'; }
-            if (lead.status === 'lost') { statusColor = '#dc2626'; statusBg = '#fef2f2'; }
+        {(() => {
+          const buyLeads = leads.filter(l => l.intent === 'Buy');
+          const rentLeads = leads.filter(l => l.intent === 'Rent');
 
-            return (
-              <div 
-                key={lead.id} 
-                style={{ 
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '24px', background: 'white', borderRadius: '16px',
-                  boxShadow: '0 4px 15px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9',
-                  transition: 'transform 0.2s, box-shadow 0.2s'
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.08)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.04)'; }}
-              >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1e293b' }}>{lead.name}</span>
-                    <span style={{ padding: '4px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: '700', color: statusColor, background: statusBg, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                      {lead.status.replace("_", " ")}
-                    </span>
+          const renderLead = (lead: Lead) => (
+            <div key={lead.id} className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', background: 'white', borderRadius: '16px', boxShadow: '0 4px 15px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <h3 style={{ margin: '0 0 4px', fontSize: '1.2rem', color: '#0f172a' }}>{lead.name}</h3>
+                  <div style={{ color: '#64748b', fontSize: '0.9rem' }}>
+                    {lead.intent} Enquiry • {new Date(lead.created_at).toLocaleDateString()}
                   </div>
-                  <div style={{ display: 'flex', gap: '16px', color: '#64748b', fontSize: '0.95rem' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>📞 <a href={`tel:${lead.phone}`} style={{ color: '#2563eb', textDecoration: 'none', fontWeight: '600' }}>{lead.phone}</a></span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>💰 <b>{lead.budget ? formatPrice(lead.budget) : "Budget not shared"}</b></span>
-                  </div>
-                  <span style={{ fontSize: '0.9rem', color: '#10b981', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
-                    📍 {lead.source && lead.source.startsWith("Property:") ? lead.source : `Preferred Area: ${lead.preferred_area || "Any area"}`}
-                  </span>
                 </div>
-                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'flex-end', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                    <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase' }}>Update Status</label>
-                    <select 
-                      value={lead.status} 
-                      onChange={(event) => updateLeadStatus(lead.id, event.target.value)}
-                      style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#f8fafc', fontWeight: '600', color: '#334155', cursor: 'pointer', outline: 'none' }}
-                    >
-                      <option value="new">New</option>
-                      <option value="contacted">Contacted</option>
-                      <option value="visit_planned">Visit Planned</option>
-                      <option value="closed">Closed (Won)</option>
-                      <option value="lost">Lost</option>
-                    </select>
-                  </div>
-                  <button 
-                    onClick={() => deleteLead(lead.id)}
-                    style={{ padding: '10px 16px', borderRadius: '8px', border: 'none', background: '#fee2e2', color: '#ef4444', fontWeight: '600', cursor: 'pointer', transition: 'background 0.2s', alignSelf: 'flex-end' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = '#fecaca'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = '#fee2e2'; }}
-                  >
-                    Delete
-                  </button>
-                </div>
+                <select 
+                  value={lead.status || "new"}
+                  onChange={async (e) => {
+                    const newStatus = e.target.value;
+                    try {
+                      await request(`/leads/${lead.id}`, {
+                        method: "PUT",
+                        body: JSON.stringify({ ...lead, status: newStatus }),
+                      });
+                      refresh();
+                    } catch (err) {
+                      alert("Failed to update status");
+                    }
+                  }}
+                  style={{ 
+                    padding: '4px 12px', 
+                    borderRadius: '16px', 
+                    fontSize: '0.85rem', 
+                    fontWeight: 'bold', 
+                    border: 'none',
+                    background: lead.status === 'Closed' ? '#dcfce7' : lead.status === 'Contacted' ? '#dbeafe' : lead.status === 'Junk' ? '#fee2e2' : '#fef3c7',
+                    color: lead.status === 'Closed' ? '#166534' : lead.status === 'Contacted' ? '#1e40af' : lead.status === 'Junk' ? '#991b1b' : '#92400e',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="new">New</option>
+                  <option value="Contacted">Contacted</option>
+                  <option value="Closed">Closed</option>
+                  <option value="Junk">Junk</option>
+                </select>
               </div>
-            );
-          })}
-          {!leads.length && (
-            <div style={{ padding: '40px', textAlign: 'center', background: 'white', borderRadius: '16px', border: '1px dashed #cbd5e1' }}>
-              <p style={{ color: '#64748b', fontSize: '1.1rem' }}>No leads yet. When customers submit the callback form, they will appear here.</p>
+              <div style={{ display: 'flex', gap: '16px', color: '#64748b', fontSize: '0.95rem' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>📞 <a href={`tel:${lead.phone}`} style={{ color: '#2563eb', textDecoration: 'none', fontWeight: '600' }}>{lead.phone}</a></span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>💰 Budget: <b>{lead.budget ? formatPrice(lead.budget) : "Not shared"}</b></span>
+              </div>
+              <span style={{ fontSize: '0.9rem', color: '#10b981', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                📍 {lead.source && lead.source.startsWith("Property:") ? lead.source : `Preferred Area: ${lead.preferred_area || "Any area"}`}
+              </span>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+                <button 
+                  onClick={() => deleteLead(lead.id)}
+                  style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: '#fee2e2', color: '#ef4444', fontWeight: '600', cursor: 'pointer', transition: 'background 0.2s' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = '#fecaca'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = '#fee2e2'; }}
+                >
+                  Delete
+                </button>
+              </div>
             </div>
-          )}
-        </div>
+          );
+
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+              {buyLeads.length > 0 && (
+                <div>
+                  <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '8px', marginBottom: '16px', color: '#0f172a' }}>Buy Enquiries</h3>
+                  <div className="stack" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {buyLeads.map(renderLead)}
+                  </div>
+                </div>
+              )}
+              {rentLeads.length > 0 && (
+                <div>
+                  <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '8px', marginBottom: '16px', color: '#0f172a' }}>Rent Enquiries</h3>
+                  <div className="stack" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {rentLeads.map(renderLead)}
+                  </div>
+                </div>
+              )}
+              {!leads.length && (
+                <div style={{ padding: '40px', textAlign: 'center', background: 'white', borderRadius: '16px', border: '1px dashed #cbd5e1' }}>
+                  <p style={{ color: '#64748b', fontSize: '1.1rem' }}>No leads yet. When customers submit the callback form, they will appear here.</p>
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </section>
       )}
         </>

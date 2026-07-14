@@ -30,7 +30,9 @@ It features a smart, context-aware lead capture system, deep WhatsApp integratio
 
 ### 💼 Admin Dashboard & CRM
 - **Sleek Inventory Management:** Add, edit, and organize properties visually. Features image uploading directly to Supabase Storage.
-- **Buyer Enquiries Pipeline:** A Kanban-style CRM to track lead statuses (New, Contacted, Visit Planned, Won, Lost) with quick-dial and budget tracking.
+- **Advanced Buyer Enquiries Pipeline:** A Kanban-style CRM to track lead statuses with split queues for **Buy** and **Rent** enquiries. Includes quick-dial and budget tracking.
+- **Property Analytics:** Built-in tracking engine that monitors and displays live view counts for every property.
+- **Instant WhatsApp Notifications:** The storefront automatically redirects high-intent leads to WhatsApp, bypassing complex integrations and ensuring 100% verified customer numbers while logging them in the CRM.
 - **AI Marketing Engine:** One-click integration with Gemini 2.5 Flash. Instantly generates Instagram captions, Facebook posts, WhatsApp statuses, and Reel scripts tailored to specific properties.
 
 ---

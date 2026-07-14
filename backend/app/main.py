@@ -59,6 +59,11 @@ async def upload_image(file: UploadFile = File(...)):
     if settings.supabase_url and settings.supabase_key:
         try:
             supabase: Client = create_client(settings.supabase_url, settings.supabase_key)
+            try:
+                supabase.storage.get_bucket("properties")
+            except Exception:
+                supabase.storage.create_bucket("properties", {"public": True})
+            
             file_data = await file.read()
             supabase.storage.from_("properties").upload(
                 path=unique_filename,
@@ -93,6 +98,7 @@ def create_property(payload: PropertyCreate, db: Session = Depends(get_db)):
 @app.get("/properties", response_model=list[PropertyOut])
 def list_properties(
     area: str | None = None,
+    listing_type: str | None = None,
     property_type: str | None = None,
     bhk: int | None = Query(default=None, ge=1),
     min_price: float | None = Query(default=None, ge=0),
@@ -103,6 +109,8 @@ def list_properties(
     query = select(Property)
     if area:
         query = query.where(Property.area == area)
+    if listing_type:
+        query = query.where(Property.listing_type == listing_type)
     if property_type:
         query = query.where(Property.property_type == property_type)
     if bhk:
@@ -133,6 +141,15 @@ def update_property(property_id: int, payload: PropertyUpdate, db: Session = Dep
     property_record = get_property_or_404(property_id, db)
     for key, value in payload.model_dump(exclude_unset=True).items():
         setattr(property_record, key, value)
+    db.commit()
+    db.refresh(property_record)
+    return property_record
+
+
+@app.post("/properties/{property_id}/view", response_model=PropertyOut)
+def increment_property_views(property_id: int, db: Session = Depends(get_db)):
+    property_record = get_property_or_404(property_id, db)
+    property_record.views += 1
     db.commit()
     db.refresh(property_record)
     return property_record

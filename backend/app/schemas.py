@@ -4,6 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class PropertyBase(BaseModel):
+    listing_type: str = "Sale"
     property_type: str = "Flat"
     society_name: str
     area: str
@@ -17,6 +18,8 @@ class PropertyBase(BaseModel):
     image_urls: list[str] = Field(default_factory=list)
     featured: bool = False
     description: str | None = None
+    status: str = "Available"
+    views: int = 0
 
 
 class PropertyCreate(PropertyBase):
@@ -24,6 +27,7 @@ class PropertyCreate(PropertyBase):
 
 
 class PropertyUpdate(BaseModel):
+    listing_type: str | None = None
     property_type: str | None = None
     society_name: str | None = None
     area: str | None = None
@@ -37,6 +41,7 @@ class PropertyUpdate(BaseModel):
     image_urls: list[str] | None = None
     featured: bool | None = None
     description: str | None = None
+    status: str | None = None
 
 
 class PropertyOut(PropertyBase):
@@ -45,6 +50,7 @@ class PropertyOut(PropertyBase):
 
 
 class LeadCreate(BaseModel):
+    intent: str = "Buy"
     name: str = Field(min_length=2, max_length=100)
     phone: str = Field(min_length=10, max_length=20)
     budget: float | None = Field(default=None, ge=0)
@@ -53,6 +59,7 @@ class LeadCreate(BaseModel):
 
 
 class LeadUpdate(BaseModel):
+    intent: str | None = None
     name: str | None = None
     phone: str | None = None
     budget: float | None = Field(default=None, ge=0)
