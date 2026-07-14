@@ -39,6 +39,7 @@ type PropertyForm = {
   image_urls: string;
   featured: boolean;
   description: string;
+  status: string;
 };
 
 const emptyForm: PropertyForm = {
@@ -56,6 +57,7 @@ const emptyForm: PropertyForm = {
   image_urls: "",
   featured: false,
   description: "",
+  status: "Available",
 };
 
 function splitLines(value: string) {
@@ -78,6 +80,7 @@ function propertyToForm(property: Property): PropertyForm {
     image_urls: property.image_urls.join("\n"),
     featured: Boolean(property.featured),
     description: property.description || "",
+    status: property.status || "Available",
   };
 }
 
