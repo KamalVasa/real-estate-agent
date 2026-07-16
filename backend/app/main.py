@@ -83,7 +83,10 @@ async def upload_image(request: Request, file: UploadFile = File(...)):
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
             
-        return {"url": f"{request.base_url}uploads/{unique_filename}"}
+        base_url_str = str(request.base_url)
+        if "localhost" not in base_url_str and "127.0.0.1" not in base_url_str:
+            base_url_str = base_url_str.replace("http://", "https://")
+        return {"url": f"{base_url_str}uploads/{unique_filename}"}
 
 
 @app.post("/properties", response_model=PropertyOut, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_admin)])

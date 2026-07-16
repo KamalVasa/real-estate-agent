@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import Image from "next/image";
+
 import { LeadForm } from "@/components/LeadForm";
 import { ViewTracker } from "@/components/ViewTracker";
 import { formatPrice, getProperty } from "@/lib/properties";
@@ -31,7 +31,7 @@ export default async function PropertyPage({ params }: Props) {
     <div>
       <div className="detail-image" style={{ position: "relative", minHeight: "400px", borderRadius: "24px", overflow: "hidden", background: "#f1f5f9" }}>
         {property.image_urls[0] && (
-          <Image src={property.image_urls[0]} alt={property.society_name} fill style={{ objectFit: 'cover' }} sizes="(max-width: 768px) 100vw, 50vw" priority unoptimized={property.image_urls[0].includes('localhost') || property.image_urls[0].includes('127.0.0.1')} />
+          <img src={property.image_urls[0]} alt={property.society_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         )}
         {property.status && property.status !== "Available" && (
           <div style={{ position: 'absolute', top: '24px', left: '24px', background: '#ef4444', color: 'white', padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold', zIndex: 2 }}>

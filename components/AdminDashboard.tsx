@@ -485,7 +485,10 @@ export function AdminDashboard() {
                         >
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                             <span style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1e293b' }}>{property.society_name}</span>
-                            <span style={{ fontSize: '1.1rem', color: '#10b981', fontWeight: '700' }}>{formatPrice(property.price, property.listing_type)}</span>
+                            <div>
+                              <span style={{ fontSize: '1.1rem', color: '#10b981', fontWeight: '700' }}>{formatPrice(property.price, property.listing_type)}</span>
+                              {property.negotiable && <span style={{ fontSize: '0.8rem', color: '#64748b', marginLeft: '4px' }}>(Negotiable)</span>}
+                            </div>
                             <span style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: '500' }}>
                               {property.property_type === 'Flat' && property.bhk ? `${property.bhk} BHK • ` : ''}{property.carpet_area} sq.ft.
                             </span>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+
 import { Property } from "@/lib/types";
 import { formatPrice } from "@/lib/properties";
 
@@ -11,7 +11,7 @@ export function PropertyCard({ property }: { property: Property }) {
     <Link className="card" href={`/properties/${property.id}`}>
       <div className="card-image">
         {property.image_urls[0] && (
-          <Image src={property.image_urls[0]} alt={property.society_name} fill style={{ objectFit: 'cover' }} sizes="(max-width: 768px) 100vw, 33vw" unoptimized={property.image_urls[0].includes('localhost') || property.image_urls[0].includes('127.0.0.1')} />
+          <img src={property.image_urls[0]} alt={property.society_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         )}
         <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap', zIndex: 2 }}>
           <span className="tag" style={{ position: 'relative', top: 'auto', left: 'auto', background: property.listing_type === 'Rent' ? '#8b5cf6' : '#10b981', color: 'white' }}>
