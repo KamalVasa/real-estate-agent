@@ -1,7 +1,7 @@
 import json
 from hmac import compare_digest
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query, status, UploadFile, File
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, status, UploadFile, File, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import select
@@ -52,7 +52,7 @@ import uuid
 from supabase import create_client, Client
 
 @app.post("/upload-image", dependencies=[Depends(require_admin)])
-async def upload_image(file: UploadFile = File(...)):
+async def upload_image(request: Request, file: UploadFile = File(...)):
     file_ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
     unique_filename = f"{uuid.uuid4()}.{file_ext}"
 
@@ -83,7 +83,7 @@ async def upload_image(file: UploadFile = File(...)):
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
             
-        return {"url": f"{settings.frontend_url.replace('3000', '8000')}/uploads/{unique_filename}"}
+        return {"url": f"{request.base_url}uploads/{unique_filename}"}
 
 
 @app.post("/properties", response_model=PropertyOut, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_admin)])
