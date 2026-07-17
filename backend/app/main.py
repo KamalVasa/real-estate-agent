@@ -59,6 +59,7 @@ from supabase import create_client, Client
 async def upload_image(request: Request, file: UploadFile = File(...)):
     file_ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
     unique_filename = f"{uuid.uuid4()}.{file_ext}"
+    file_data = await file.read()
 
     if settings.supabase_url and settings.supabase_key:
         try:
@@ -68,7 +69,6 @@ async def upload_image(request: Request, file: UploadFile = File(...)):
             except Exception:
                 supabase.storage.create_bucket("properties", {"public": True})
             
-            file_data = await file.read()
             supabase.storage.from_("properties").upload(
                 path=unique_filename,
                 file=file_data,
@@ -76,7 +76,7 @@ async def upload_image(request: Request, file: UploadFile = File(...)):
             )
             public_url = supabase.storage.from_("properties").get_public_url(unique_filename)
             return {"url": public_url}
-        except Exception as e:
+        except Exception:
             # Fallback to local disk if Supabase upload fails
             if not os.path.exists(UPLOAD_DIR):
                 os.makedirs(UPLOAD_DIR)
@@ -87,6 +87,15 @@ async def upload_image(request: Request, file: UploadFile = File(...)):
             if "localhost" not in base_url_str and "127.0.0.1" not in base_url_str:
                 base_url_str = base_url_str.replace("http://", "https://")
             return {"url": f"{base_url_str}uploads/{unique_filename}"}
+    else:
+        if not os.path.exists(UPLOAD_DIR):
+            os.makedirs(UPLOAD_DIR)
+        
+        file_path = os.path.join(UPLOAD_DIR, unique_filename)
+        with open(file_path, "wb") as buffer:
+            buffer.write(file_data)
+            
+        base_url_str = str(request.base_url)
         if "localhost" not in base_url_str and "127.0.0.1" not in base_url_str:
             base_url_str = base_url_str.replace("http://", "https://")
         return {"url": f"{base_url_str}uploads/{unique_filename}"}
