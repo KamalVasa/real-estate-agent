@@ -43,6 +43,7 @@ type PropertyForm = {
   price_unit: string;
   negotiable: boolean;
   views: number;
+  station_distance_unit: string;
 };
 
 const emptyForm: PropertyForm = {
@@ -64,6 +65,7 @@ const emptyForm: PropertyForm = {
   price_unit: "Lakh",
   negotiable: false,
   views: 0,
+  station_distance_unit: "km",
 };
 
 function splitLines(value: string) {
@@ -90,14 +92,16 @@ function propertyToForm(property: Property): PropertyForm {
     carpet_area: String(property.carpet_area),
     floor: property.floor,
     furnished: property.furnished,
-    station_distance: property.station_distance,
-    amenities: property.amenities.join("\n"),
-    image_urls: property.image_urls.join("\n"),
+    station_distance: property.station_distance ? property.station_distance.replace(/ km| m|km|m/gi, '').trim() : "",
+    amenities: property.amenities ? property.amenities.join("\n") : "",
+    image_urls: property.image_urls ? property.image_urls.join("\n") : "",
     featured: Boolean(property.featured),
     description: property.description || "",
     status: property.status || "Available",
     price_unit: priceUnit,
-    negotiable: Boolean(property.negotiable),
+    negotiable: property.negotiable || false,
+    views: property.views || 0,
+    station_distance_unit: property.station_distance && property.station_distance.toLowerCase().includes("m") && !property.station_distance.toLowerCase().includes("km") ? "m" : "km",
   };
 }
 
@@ -202,7 +206,7 @@ export function AdminDashboard() {
       carpet_area: Number(form.carpet_area),
       floor: form.floor.trim(),
       furnished: form.furnished.trim(),
-      station_distance: form.station_distance.trim(),
+      station_distance: form.station_distance.trim() ? `${form.station_distance.trim()} ${form.station_distance_unit}` : "",
       amenities: splitLines(form.amenities),
       image_urls: splitLines(form.image_urls),
       featured: form.featured,
@@ -397,7 +401,18 @@ export function AdminDashboard() {
           
           <div className="form-row">
             <div className="field"><label>Carpet area</label><input required value={form.carpet_area} onChange={(event) => updateField("carpet_area", event.target.value)} type="number" min="1" /></div>
-            <div className="field"><label>Station distance</label><input required value={form.station_distance} onChange={(event) => updateField("station_distance", event.target.value)} /></div>
+            <div className="field-group">
+            <div className="field">
+              <label>Station distance</label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input required value={form.station_distance} onChange={(event) => updateField("station_distance", event.target.value)} type="number" min="0" step="0.01" style={{ flex: 1 }} placeholder="e.g. 1.5" />
+                <select value={form.station_distance_unit || "km"} onChange={(event) => updateField("station_distance_unit", event.target.value)} style={{ width: '80px', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '10px' }}>
+                  <option value="km">km</option>
+                  <option value="m">m</option>
+                </select>
+              </div>
+            </div>
+          </div>
           </div>
 
           {form.property_type !== "Shop" && (
