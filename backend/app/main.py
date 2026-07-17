@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from .config import settings
 from .database import Base, engine, get_db
@@ -19,6 +20,9 @@ from .schemas import (
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Dombivli Property AI API", version="0.1.0")
+
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=["*"])
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -73,17 +77,16 @@ async def upload_image(request: Request, file: UploadFile = File(...)):
             public_url = supabase.storage.from_("properties").get_public_url(unique_filename)
             return {"url": public_url}
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Supabase upload failed: {str(e)}")
-    else:
-        if not os.path.exists(UPLOAD_DIR):
-            os.makedirs(UPLOAD_DIR)
-        
-        file_path = os.path.join(UPLOAD_DIR, unique_filename)
-        
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-            
-        base_url_str = str(request.base_url)
+            # Fallback to local disk if Supabase upload fails
+            if not os.path.exists(UPLOAD_DIR):
+                os.makedirs(UPLOAD_DIR)
+            file_path = os.path.join(UPLOAD_DIR, unique_filename)
+            with open(file_path, "wb") as buffer:
+                buffer.write(file_data)
+            base_url_str = str(request.base_url)
+            if "localhost" not in base_url_str and "127.0.0.1" not in base_url_str:
+                base_url_str = base_url_str.replace("http://", "https://")
+            return {"url": f"{base_url_str}uploads/{unique_filename}"}
         if "localhost" not in base_url_str and "127.0.0.1" not in base_url_str:
             base_url_str = base_url_str.replace("http://", "https://")
         return {"url": f"{base_url_str}uploads/{unique_filename}"}

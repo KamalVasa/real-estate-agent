@@ -42,6 +42,7 @@ type PropertyForm = {
   status: string;
   price_unit: string;
   negotiable: boolean;
+  views: number;
 };
 
 const emptyForm: PropertyForm = {
@@ -62,6 +63,7 @@ const emptyForm: PropertyForm = {
   status: "Available",
   price_unit: "Lakh",
   negotiable: false,
+  views: 0,
 };
 
 function splitLines(value: string) {
